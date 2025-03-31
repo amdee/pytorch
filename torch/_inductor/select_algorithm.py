@@ -648,6 +648,7 @@ class TritonTemplateKernel(TritonKernel):
         num = 0
         out = None
         scatters = []
+        import pdb; pdb.set_trace()
         while f"mod_{subgraph_number}_{num}" in self.subgraph_bodies:
             num += 1
         with self.create_subgraph_body(f"mod_{subgraph_number}_{num}"):
@@ -1177,6 +1178,7 @@ class TritonTemplate(KernelTemplate):
                 template = kernel.render(self.template, kwargs)
                 with kernel.set_subgraph_body("<STORE_OUTPUT>"):
                     code = template.finalize_all()
+
             except ZeroDivisionError:
                 # TODO(nmacchioni): fix sympy division by zero
                 return None
@@ -1772,7 +1774,6 @@ class AlgorithmSelectorCache(PersistentCache):
 
         def precompile(choices) -> Callable[[], None]:
             log.debug("Starting precompilation")
-
             def no_op(*args, **kwargs):
                 return
 

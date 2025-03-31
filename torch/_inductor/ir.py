@@ -5999,6 +5999,39 @@ class TMADescriptor(ExternKernel):
     def codegen(self, wrapper) -> None:  # type: ignore[no-untyped-def]
         wrapper.generate_tma_descriptor(self)
 
+class SubgraphBuffer(ExternKernel):
+    def __init__(
+        self, layout, inputs, gm, real_inputs
+    ):
+        super().__init__(None, layout, inputs)
+        self.gm = gm
+        self.real_inputs = real_inputs
+        self.name = V.graph.register_buffer(self)
+
+        V.graph.register_operation(self)
+
+    def codegen(self, wrapper):
+        from torch._inductor.compile_fx import compile_fx
+        import torch._inductor.config as inductor_config
+
+        # with inductor_config.patch(
+        #     max_autotune_gemm_backends="ATEN",
+        # ):
+        #     output = compile_fx(self.gm, self.real_inputs)
+        # How do I inline the IR here? Make the node call the result of 
+        # compile_fx the gm
+
+        subgraph = V.graph.make_subgraph(self.gm, self.real_inputs, "mm_decompose_k")
+        with V.set_graph_handler(subgraph):
+            # Don't bother autotuning on Triton here
+            with inductor_config.patch(
+                max_autotune_gemm_backends="ATEN",
+            ):
+                subgraph.run(*self.real_inputs)
+
+        subgraph.codegen_subgraph(V.graph)
+        return
+            
 
 class UserDefinedTritonKernel(ExternKernel):
     def get_kernel_and_metadata(self):  # type: ignore[no-untyped-def]
