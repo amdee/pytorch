@@ -5560,6 +5560,7 @@ def full(
     return torch.fill(e, fill_value)  # type: ignore[arg-type]
 
 
+@register_decomposition(aten.full_like)
 def full_like(
     a: TensorLikeType,
     fill_value: NumberType,
@@ -5580,7 +5581,7 @@ def full_like(
         requires_grad=requires_grad,
         memory_format=memory_format,
     )
-    return fill(e, fill_value)
+    return prims.fill(e, fill_value)
 
 
 @register_decomposition(aten.zeros_like)
